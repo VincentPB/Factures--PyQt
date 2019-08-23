@@ -1,5 +1,3 @@
-#Importe un fichier .xlsx puis détecte l'opération à appliquer
-#dessus pour ensuite le traiter.
 
 #=============================== IMPORTS =================================#
 
@@ -151,77 +149,57 @@ def getfiles(dirpath): #Get recent files
     a=os.listdir(dirpath)
     return a
 
+directory = r'\\srv-FIc\Archivage_factures_srv_map'
+directoryB = r'\\10.202.72.22\Factures'
+outputFile = 'DATA.csv'
+print("LENGTH CALCULATION PROCESSING, PLEASE WAIT...")
+nbPDF = countPDF(directory) + countPDF(directoryB)
+print("LENGTH CALCULATION DONE")
+output = pd.read_csv(outputFile)
+LO = len(output)
 
-##directory = r'\\srv-FIc\Archivage_factures_srv_map'
-##directoryB = r'\\10.202.72.22\Factures'
-##outputFile = 'DATA.csv'
-##print("LENGTH CALCULATION PROCESSING, PLEASE WAIT...")
-##nbPDF = countPDF(directory) + countPDF(directoryB)
-##print("LENGTH CALCULATION DONE")
-##output = pd.read_csv(outputFile)
-##LO = len(output)
-##
-##if (LO == 0):
-##    print('EMPTY FILE')
-##    DATAF = extract(directory, directoryB)  
-##    DATAF.to_csv(outputFile, sep = ',', index=False)
-##    output = pd.read_csv(outputFile)
-##    
-##if (LO != nbPDF):
-##    print('FILES TO ADD : ', abs(LO-nbPDF))
-##    Year = [f.name for f in os.scandir(directoryB) if f.is_dir() ][-1]
-##    NumDos = [f.name for f in os.scandir(directoryB+'/'+Year) if f.is_dir() ][-1]
-##    lastFolder = directoryB+'/'+Year+'/'+NumDos
-##    lastFilerPDF = getfiles(lastFolder)[-(nbPDF - LO):]
-##    with open(outputFile, 'a') as f:
-##        writer = csv.writer(f, lineterminator='\n')
-##        for i in lastFilerPDF:
-##            newLine = listNUMAndCODEFile(i, lastFolder)  
-##            writer.writerow(newLine)
-##
-##else:
-##    print('NO FILES NO ADD')
-##
-##print('DATABASE UPDATED')    
-##output = pd.read_csv(outputFile)
+if (LO == 0):
+    print('EMPTY FILE')
+    DATAF = extract(directory, directoryB)  
+    DATAF.to_csv(outputFile, sep = ',', index=False)
+    output = pd.read_csv(outputFile)
+    
+if (LO != nbPDF):
+    print('FILES TO ADD : ', abs(LO-nbPDF))
+    Year = [f.name for f in os.scandir(directoryB) if f.is_dir() ][-1]
+    NumDos = [f.name for f in os.scandir(directoryB+'/'+Year) if f.is_dir() ][-1]
+    lastFolder = directoryB+'/'+Year+'/'+NumDos
+    lastFilerPDF = getfiles(lastFolder)[-(nbPDF - LO):]
+    with open(outputFile, 'a') as f:
+        writer = csv.writer(f, lineterminator='\n')
+        for i in lastFilerPDF:
+            newLine = listNUMAndCODEFile(i, lastFolder)  
+            writer.writerow(newLine)
+
+else:
+    print('NO FILES NO ADD')
+
+print('DATABASE UPDATED')  
+output = pd.read_csv(outputFile)
 
 #=========================================#
 
-def onselect(evt):
-        w = evt.widget
-        index = int(w.curselection()[0])
-        value = w.get(index)
+def filterD(line1, line2, line3, line4, listeSel):
 
-def openF(): #Open a file (pdf)
-    global listSel
-    global output
-    L=len(output)
-    for j in range (len(listSel.curselection())):
-        numF = str(listSel.get(listSel.curselection()[j]))[22:29]
-        i=0
-        while(str(numF))[1:]!=str(output.NUMBILL[i]):
-            i+=1
-        if(output.PATH[i][4]=='v'):
-            realPath = output.PATH[i][:37]+'\\'+output.PATH[i][37:42]+'\\'+output.PATH[i][42:45]+'\\'+output.PATH[i][45:]
-        else:
-            realPath = output.PATH[i][:24]+'\\'+output.PATH[i][24:29]+'\\'+output.PATH[i][29:32]+'\\'+output.PATH[i][32:]
-        os.startfile(realPath)
-
-
-def filterD(line1, line2, line3, line4):
-
-    #listSel.delete(0,listSel.size())
+    listeSel.clear()
+    
     dateStart = line1.text()
     dateEnd = line2.text()
     client = line3.text()
     fact = line4.text()
 
-    #listeFiltre0 = Sort(dateStart, dateEnd, client, output)
-    #listeFiltre = factSort(fact, listeFiltre0)
+    listeFiltre0 = Sort(dateStart, dateEnd, client, output)
+    listeFiltre = factSort(fact, listeFiltre0)
 
-    #for i in range(len(listeFiltre)):
+    for i in range(len(listeFiltre)):
         #listSel.insert(i, listeFiltre[i][:-4])
-    print(dateStart, dateEnd, client, fact)
+        item = QListWidgetItem(listeFiltre[i][:-4])
+        listeSel.addItem(item)
 
 #=========================== DISPLAY FUNCTION ============================#
 
@@ -265,11 +243,6 @@ def aProposDe(): #PopUp 'A propos'
     );
     msgBox.exec()
 
-
-def lancement(line):
-    print('Your name: ' + line.text())
-
-  
 def openFileNameDialog(): #Retourne le nom du fichier sélectionné
         fileName = QFileDialog.getOpenFileName()
         return fileName[0]
@@ -310,23 +283,23 @@ class Example(QWidget): #Widget
 
         buttonT = QPushButton('RECHERCHER', self)
         buttonT.setToolTip('Chercher les factures correspondantes')
-        buttonT.clicked.connect(lambda : filterD(self.line1, self.line2, self.line3, self.line4))
+        buttonT.clicked.connect(lambda : filterD(self.line1, self.line2, self.line3, self.line4, self.listWidget))
         buttonT.move(1150, 15)
         buttonT.setFont(QFont("Calibri", 11, QFont.Bold))
         buttonT.resize(100, 40)
         
         self.nameLabel1 = QLabel(self)
-        self.nameLabel1.setText('<p align=center>Date Début<br>(JJ/MM/AAA)</p>')
+        self.nameLabel1.setText('<p align=center>Date Début<br>(JJ/MM/AAAA)</p>')
         self.nameLabel1.setFont(QFont("Calibri", 11, QFont.Bold))
         self.line1 = QLineEdit(self)
         self.line1.setFont(QFont("Calibri", 11, QFont.Bold))
         self.nameLabel2 = QLabel(self)
-        self.nameLabel2.setText('<p align=center>Date Fin<br>(JJ/MM/AAA)</p>')
+        self.nameLabel2.setText('<p align=center>Date Fin<br>(JJ/MM/AAAA)</p>')
         self.nameLabel2.setFont(QFont("Calibri", 11, QFont.Bold))
         self.line2 = QLineEdit(self)
         self.line2.setFont(QFont("Calibri", 11, QFont.Bold))
         self.nameLabel3 = QLabel(self)
-        self.nameLabel3.setText('<p align=center>N° Client<br>(7 chars)</p>')
+        self.nameLabel3.setText('<p align=center>N° Client<br>(6 chars)</p>')
         self.nameLabel3.setFont(QFont("Calibri", 11, QFont.Bold))
         self.line3 = QLineEdit(self)
         self.line3.setFont(QFont("Calibri", 11, QFont.Bold))
@@ -350,9 +323,65 @@ class Example(QWidget): #Widget
         self.nameLabel3.move(620, 18)
         self.nameLabel4.move(890, 18)
 
+        self.listWidget = QListWidget()
+        self.listWidget.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.listWidget.setGeometry(QRect(10, 10, 211, 291))
+        self.listWidget.setFont(QFont("Calibri", 12))
+
+        self.BLANC = QLabel(self)
+        self.BLANC.setText('                        ')
+        self.BLANC2 = QLabel(self)
+        self.BLANC2.setText('                        ')
+        
+        #○self.listWidget.itemClicked.connect(lambda: print('BONSOIR'))
+
+
+        buttonO = QPushButton('OUVRIR', self)
+        buttonO.setToolTip('Ouvrir les factures sélectionnées')
+        buttonO.clicked.connect(lambda : ouverture(self.listWidget))
+        buttonO.setFont(QFont("Calibri", 11, QFont.Bold))
+        buttonO.resize(100, 40)
+
+        self.layout = QGridLayout(self)
+        self.layout.addWidget(buttonT, 0, 9)
+        self.layout.addWidget(self.nameLabel1, 0, 1)
+        self.layout.addWidget(self.nameLabel2, 0, 3)
+        self.layout.addWidget(self.nameLabel3, 0, 5)
+        self.layout.addWidget(self.nameLabel4, 0, 7)
+        self.layout.addWidget(self.line1, 0, 2)
+        self.layout.addWidget(self.line2, 0, 4)
+        self.layout.addWidget(self.line3, 0, 6)
+        self.layout.addWidget(self.line4, 0, 8)
+        self.layout.addWidget(self.BLANC, 2,5)
+        self.layout.addWidget(self.listWidget, 3, 4, 1, 3)
+        self.layout.addWidget(buttonO, 3, 8)
+        
+        self.layout.addWidget(self.BLANC2, 4,5)
+        
+
+        self.setLayout(self.layout)
+ 
         self.show()
 
 #================================ DISPLAY =================================#
+
+def ouverture(listSel):
+    	 
+    items = listSel.selectedItems()
+    x = []
+    for i in range(len(items)):
+        x.append(str(listSel.selectedItems()[i].text()))
+    for j in range (len(x)):
+        numF = str(x[j])[22:29]
+        i=0
+        while(str(numF))[1:]!=str(output.NUMBILL[i]):
+            i+=1
+        if(output.PATH[i][4]=='v'):
+            realPath = output.PATH[i][:37]+'\\'+output.PATH[i][37:42]+'\\'+output.PATH[i][42:45]+'\\'+output.PATH[i][45:]
+        else:
+            realPath = output.PATH[i][:24]+'\\'+output.PATH[i][24:29]+'\\'+output.PATH[i][29:32]+'\\'+output.PATH[i][32:]
+        os.startfile(realPath)
+
         
 app = QApplication([])
 
