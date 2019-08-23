@@ -2,19 +2,17 @@
 #=============================== IMPORTS =================================#
 
 import os
+import sys
 import csv
 import string
-from tkinter import *
 import pandas as pd
 import datetime
-#import pyexcel as pe
 if hasattr(sys, 'frozen'):
     os.environ['PATH'] = sys._MEIPASS + ";" + os.environ['PATH']
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from xlwt import Workbook
-#from xlutils.copy import copy 
 from xlrd import open_workbook
 from functools import partial
 from tkinter import filedialog
@@ -148,6 +146,7 @@ def listPDF(directory):
 def getfiles(dirpath): #Get recent files
     a=os.listdir(dirpath)
     return a
+
 
 directory = r'\\srv-FIc\Archivage_factures_srv_map'
 directoryB = r'\\10.202.72.22\Factures'
